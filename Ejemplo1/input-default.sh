@@ -29,3 +29,6 @@ iptables -A INPUT -p tcp --dport 2080 -j DROP
 iptables -A INPUT -p tcp --dport 3080 -s 10.200.243.210 -j ACCEPT
 iptables -A INPUT -p tcp --dport 3080 -j REJECT
 #iptables -A INPUT -p tcp --dport 3080 -j DROP
+
+# Mostrar reglas generadas
+iptables -L -t nat
