@@ -1,0 +1,19 @@
+# 26.04.22
+
+docker network create netA
+
+docker network create netB
+
+docker network inspect netA
+
+172.21.0.0/16
+
+docker network inspect netB
+
+172.22.0.0/16
+
+
+docker run --rm --name hostA1 -h hostA1 --net netA --privileged -d edtasixm11/net18:nethost
+docker run --rm --name hostA2 -h hostA2 --net netA --privileged -d edtasixm11/net18:nethost
+docker run --rm --name hostB1 -h hostB1 --net netB --privileged -d edtasixm11/net18:nethost
+docker run --rm --name hostB2 -h hostB2 --net netB --privileged -d edtasixm11/net18:nethost
