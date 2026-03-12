@@ -1,181 +1,224 @@
-# IPTABLES 2021-2022
-## Aaron Andal ASIX M11 2021-2022
+🔥 CAPÍTULO — IPTABLES (Firewall clásico de Linux)
 
-# INDEX
+Control total del tráfico de red a nivel de kernel
 
-* **Base de Datos de ejemplo [01]**: [Consultas Simples](https://github.com/KeshiKiD03/m02#cheatsheet-keshi-01)
+🧱 1. ¿Qué es iptables?
 
-* **Herramientas gráficas [02]**: [UNION](https://github.com/KeshiKiD03/m02#cheatsheet-keshi-02)
+iptables es una herramienta que permite gestionar las reglas del firewall del kernel de Linux (Netfilter).
 
-* **Mantenimiento de la BD [03]**: [JOIN - Multi Tabla](https://github.com/KeshiKiD03/m02#cheatsheet-keshi-03)
+Sirve para:
 
-* **Scripts [04]**: [Funciones de grupo - Aggregate - GROUP BY - HAVING](https://github.com/KeshiKiD03/m02#cheatsheet-keshi-04)
+Permitir tráfico
 
-**pasar apuntes**
+Bloquear tráfico
 
-## Manteniment i Eines d'Administració de la BD
+Redirigir puertos
 
-<div style="padding: 5%">
-  <img src="" /> 
-</div>
+Hacer NAT
 
-<div style="padding: 5%">
-  <img src="" /> 
-</div>
+Filtrar paquetes por IP, puerto, protocolo, interfaz…
 
-<div style="padding: 5%">
-  <img src="" /> 
-</div>
+👉 Idea clave: iptables controla qué entra, qué sale y qué se reenvía en tu máquina.
 
-<div style="padding: 5%">
-  <img src="" /> 
-</div>
+🧩 2. Las 3 tablas principales
 
-<div style="padding: 5%">
-  <img src="" /> 
-</div>
+Iptables tiene varias tablas, pero las importantes son:
 
-```
+🟦 filter (la tabla por defecto)
 
-```
+Controla el tráfico normal.
 
+Cadenas:
 
-```
+INPUT → tráfico que entra al sistema
 
-```
+OUTPUT → tráfico que sale del sistema
 
-```
+FORWARD → tráfico que pasa a través del sistema (routers)
 
-```
+🟩 nat
 
+Para traducción de direcciones (NAT).
 
-```
+Cadenas:
 
-```
+PREROUTING
 
-```
+POSTROUTING
 
-```
+OUTPUT
 
+🟧 mangle
 
-```
+Para modificar paquetes (TTL, QoS, marcas).
 
-```
+👉 Idea clave: 90% del trabajo se hace en filter y nat.
 
-## SCRIPTS
+🧱 3. Cadenas y políticas por defecto
 
-<div style="padding: 5%">
-  <img src="" /> 
-</div>
+Cada cadena tiene una política por defecto:
 
-<div style="padding: 5%">
-  <img src="" /> 
-</div>
+Ejemplo:
 
-<div style="padding: 5%">
-  <img src="" /> 
-</div>
+iptables -P INPUT DROP
+iptables -P OUTPUT ACCEPT
+iptables -P FORWARD DROP
 
-<div style="padding: 5%">
-  <img src="" /> 
-</div>
+👉 Idea clave: Política DROP + reglas explícitas = firewall seguro.
 
-<div style="padding: 5%">
-  <img src="" /> 
-</div>
+🛠️ 4. Comandos esenciales
 
-```
+🔍 Ver reglas
 
-```
+iptables -L -n -v
 
+➕ Añadir regla
 
-```
+iptables -A INPUT -p tcp --dport 22 -j ACCEPT
 
-```
+➖ Eliminar regla
 
-```
+iptables -D INPUT 1
 
-```
+🔄 Guardar reglas (depende de distro)
 
+Debian/Ubuntu:
 
-```
+iptables-save > /etc/iptables/rules.v4
 
-```
+CentOS/RHEL:
 
-```
+service iptables save
 
-```
+👉 Idea clave: si no guardas las reglas, se pierden al reiniciar.
 
+🧬 5. Ejemplos prácticos (lo que realmente se usa)
 
-```
+🟦 Permitir SSH
 
-```
+iptables -A INPUT -p tcp --dport 22 -j ACCEPT
 
-## LDAPS
+🟩 Permitir HTTP/HTTPS
 
-<div style="padding: 5%">
-  <img src="" /> 
-</div>
+iptables -A INPUT -p tcp -m multiport --dports 80,443 -j ACCEPT
 
-<div style="padding: 5%">
-  <img src="" /> 
-</div>
+🟥 Bloquear una IP
 
-<div style="padding: 5%">
-  <img src="" /> 
-</div>
+iptables -A INPUT -s 192.168.1.50 -j DROP
 
-<div style="padding: 5%">
-  <img src="" /> 
-</div>
+🟧 Permitir solo una IP
 
-<div style="padding: 5%">
-  <img src="" /> 
-</div>
+iptables -A INPUT -p tcp --dport 22 -s 203.0.113.10 -j ACCEPT
+iptables -A INPUT -p tcp --dport 22 -j DROP
 
-```
+🟨 Permitir ping
 
-```
+iptables -A INPUT -p icmp --icmp-type echo-request -j ACCEPT
 
+🟫 Bloquear ping
 
-```
+iptables -A INPUT -p icmp --icmp-type echo-request -j DROP
 
-```
+🌐 6. NAT con iptables (muy importante)
 
-```
+🟦 Masquerade (salida a Internet)
 
-```
+iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
 
+🟩 Port forwarding (redirección de puertos)
 
-```
+Ejemplo: redirigir puerto 80 externo → 8080 interno
 
-```
+iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 80 \
+  -j DNAT --to-destination 192.168.1.10:8080
 
-```
+👉 Idea clave: iptables puede convertir tu Linux en un router/firewall completo.
 
-```
+🧱 7. Orden de las reglas (crítico)
 
+Iptables evalúa reglas de arriba hacia abajo.
 
-```
+Ejemplo:
 
-```
+iptables -A INPUT -j DROP
+iptables -A INPUT -p tcp --dport 22 -j ACCEPT
 
-<div style="padding: 5%">
-  <img src="" /> 
-</div>
+Resultado: SSH queda bloqueado, porque la regla DROP se ejecuta antes.
 
-<div style="padding: 5%">
-  <img src="" /> 
-</div>
+👉 Idea clave: el orden de las reglas lo es todo.
 
-<div style="padding: 5%">
-  <img src="" /> 
-</div>
+🛡️ 8. Buenas prácticas de seguridad
 
-<div style="padding: 5%">
-  <img src="" /> 
-</div>
+Política por defecto: DROP
 
-<div style="padding: 5%">
-  <img src="" /> 
-</div>
+Permitir solo lo necesario
+
+Registrar intentos sospechosos
+
+No permitir SSH desde cualquier sitio
+
+Usar -m state --state ESTABLISHED,RELATED
+
+Guardar reglas
+
+Documentar reglas complejas
+
+Ejemplo de regla segura:
+
+iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+🧪 9. Ejemplo de firewall completo (muy típico en ASIR/ASIX)
+
+iptables -F
+iptables -P INPUT DROP
+iptables -P FORWARD DROP
+iptables -P OUTPUT ACCEPT
+
+# Permitir loopback
+iptables -A INPUT -i lo -j ACCEPT
+
+# Permitir conexiones establecidas
+iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+# SSH
+iptables -A INPUT -p tcp --dport 22 -j ACCEPT
+
+# HTTP/HTTPS
+iptables -A INPUT -p tcp -m multiport --dports 80,443 -j ACCEPT
+
+# Ping
+iptables -A INPUT -p icmp --icmp-type echo-request -j ACCEPT
+
+👉 Idea clave: este es el firewall base de cualquier servidor Linux.
+
+🧩 10. iptables vs nftables (actualidad)
+
+Hoy en día, muchas distros usan nftables como reemplazo moderno.
+
+Pero:
+
+iptables sigue funcionando
+
+iptables-nft actúa como compatibilidad
+
+En ASIR/ASIX se sigue enseñando iptables
+
+👉 Idea clave: saber iptables te permite entender nftables.
+
+🎯 ¿Cómo quieres seguir?
+
+Puedo ayudarte a:
+
+Crear un firewall completo para un servidor real
+
+Hacer NAT avanzado
+
+Configurar iptables como router
+
+Integrarlo con Docker (muy importante)
+
+Migrar reglas de iptables → nftables
+
+Simular ataques y bloquearlos con iptables
+
+¿Quieres que pasemos a ejercicios prácticos, NAT avanzado, o prefieres seguir con otro tema del índice?
